@@ -1,82 +1,183 @@
-# Permutation Sorting Algorithms and Complexity
+# Permutation-Sorting Algorithms & Complexity
 
-This report summarizes the sorting algorithms implemented in `permutation_sorting.py`.  We treat each input list as a permutation of the integers $\{1,\ldots,n\}$.
+We assume every input list is a **permutation** of the integers  
+\(\{1,2,\dots,n\}\).  This document summarises the classical sorting
+algorithms implemented in `permutation_sorting.py`, gives their
+complexity bounds, and leaves placeholders for your empirical
+measurements.
 
-## Counting Permutations
+---
 
-A permutation of length $n$ is an ordered arrangement of the elements $\{1,\ldots,n\}$.  The total number of permutations is
+## 1 How many permutations?
+
+A permutation of length \(n\) is any ordering of the \(n\) distinct
+items.  The total number of such orderings is
+
 \[
- n! \,=\, 1 \times 2 \times 3 \times \cdots \times n.
+n! \;=\; 1\times2\times3\times\dots\times n .
 \]
 
-Many algorithms in this project exploit the fact that each element appears exactly once.
+---
 
-## Sorting Algorithms
+## 2 Sorting algorithms
 
-Below are the algorithms provided along with their time complexities.
+| Short name | Section |
+|------------|---------|
+| Bubble sort | § 2.1 |
+| Insertion sort | § 2.2 |
+| Merge sort | § 2.3 |
+| Quick sort | § 2.4 |
+| Heap sort | § 2.5 |
 
-### Bubble Sort
+Each subsection contains a **formal** definition and a **plain-language**
+intuition.
 
-Bubble sort repeatedly swaps adjacent elements that are out of order.  For a permutation of length $n$ it makes at most
+### 2.1 Bubble sort
+**Formal.**  Repeatedly scan adjacent pairs \((a_j,a_{j+1})\).  
+If \(a_j>a_{j+1}\) swap them.  After the \(i\)-th full pass the last
+\(i\) elements are in final position.  Worst-case comparisons:
+\(\tfrac{n(n-1)}{2}\Rightarrow\Theta(n^{2})\) time; extra space
+\(O(1)\).
+
+**Plain words.**  Keep “bubbling” the biggest item to the end of the
+list by swapping neighbours that are out of order.  Simple but slow.
+
+---
+
+### 2.2 Insertion sort
+**Formal.**  For each index \(i\) insert \(a_i\) into the already
+sorted prefix \(a_0\dots a_{i-1}\) by shifting larger elements right.  
+Worst-case (reverse order) does \(\Theta(n^{2})\) shifts; extra space
+\(O(1)\).
+
+**Plain words.**  Like sorting playing cards: take the next card and
+slide it left until it fits.
+
+---
+
+### 2.3 Merge sort
+**Formal.**  Recurrence  
+\(T(n)=2\,T(\tfrac{n}{2})+n\Rightarrow T(n)=\Theta(n\log n)\).  
+Merging halves needs a buffer of length \(n\Rightarrow O(n)\) extra
+space.
+
+**Plain words.**  Keep splitting the list in half, sort each half, then
+*merge* them back together like a zipper.
+
+---
+
+### 2.4 Quick sort
+**Formal.**  Pick a pivot, partition into “\< pivot”, “pivot”, “\> pivot”,
+then recurse.  With a random pivot the expected height of the recursion
+tree is \(\Theta(\log n)\); total work
+\(\Theta(n\log n)\).  Recursion stack uses \(O(\log n)\) space on
+average, \(O(n)\) in the worst case.
+
+**Plain words.**  Choose a pivot value, shove smaller items left and
+bigger items right, then sort each side.  Usually very fast, but can
+slow drastically if the pivot choice is unlucky.
+
+---
+
+### 2.5 Heap sort
+**Formal.**  (1) Build a max-heap in \(O(n)\).  (2) Repeat \(n-1\)
+times: swap the root with the last element and heapify the reduced
+heap.  Total \(\Theta(n\log n)\) time, \(O(1)\) extra memory.
+
+**Plain words.**  Treat the array like a binary tree where parents are
+bigger than children.  Keep removing the top (largest) item and fixing
+the heap.
+
+---
+
+## 3 Permutation generation — Steinhaus–Johnson–Trotter (SJT)
+
+SJT is **not** a sorter; it is an efficient way to *enumerate* all
+\(n!\) permutations with a single adjacent swap between successive
+outputs.
+
+### 3.1 Formal description
+
+1. Give every element a direction (← or →).  
+2. A number is **mobile** if its arrow points to a neighbour that is
+   smaller than itself.  
+3. Find the **largest mobile** element \(m\).  
+4. Swap \(m\) with the neighbour it points to.  
+5. Reverse the direction of **every** element larger than \(m\).  
+6. Repeat until no element is mobile (all arrows blocked).
+
+Cost: one adjacent swap per permutation ⇒  
+\(O(n)\) time and \(O(n)\) space *per permutation*,
+\(O(n!\,n)\) overall.
+
+### 3.2 Step-by-step example for \(n=3\)
+
+Below each element carries its arrow; the largest mobile is **bold**.
+
+| Step | State | Swap performed |
+|------|-----------------|------------------|
+| 0 | 1← 2← **3←** | start |
+| 1 | 1← **3←** 2→ | swap 3 ↔ 2 |
+| 2 | **3→** 1← 2→ | swap 3 ↔ 1 |
+| 3 | 3→ 1← **2←** | swap 2 ↔ 1 |
+| 4 | 3← **2←** 1→ | swap 2 ↔ 3 |
+| 5 | **2→** 3← 1→ | swap 2 ↔ 3 |
+| 6 | 2→ 3← 1→ | (no mobile ⇒ done) |
+
+Numbers only:
+
 \[
- \sum_{i=1}^{n-1} i \;=\; \frac{n(n-1)}{2}
+(1\,2\,3),\ (1\,3\,2),\ (3\,1\,2),\ (3\,2\,1),\ (2\,3\,1),\ (2\,1\,3).
 \]
-comparisons, leading to $\mathcal{O}(n^2)$ time.
 
-### Insertion Sort
+**Plain words.**  Every number marches left or right until it hits a
+larger one.  Always move the biggest number that can move, then make
+all bigger numbers turn around.  Continue until nobody can move—you’ve
+visited every ordering exactly once.
 
-Insertion sort builds the sorted permutation by inserting each element into its proper place among the previous ones.  The worst case occurs for a reversed permutation and also requires $\mathcal{O}(n^2)$ comparisons and swaps.
+---
 
-### Merge Sort
+## 4 Complexity cheat-sheets
 
-Merge sort divides the permutation into halves, recursively sorts each half, and then merges the results.  The recurrence
-\[
- T(n) = 2\,T\Bigl(\frac{n}{2}\Bigr) + n
-\]
-solves to $\mathcal{O}(n\log n)$ time.  The algorithm uses additional space for merging, so its space complexity is $\mathcal{O}(n)$.
+### 4.1 Theoretical bounds for *sorting* algorithms
 
-### Quick Sort
+| Algorithm | Time (best) | Time (avg) | Time (worst) | Extra space |
+|-----------|-------------|-----------|--------------|-------------|
+| Bubble    | \(Θ(n^{2})\) | \(Θ(n^{2})\) | \(Θ(n^{2})\) | \(O(1)\) |
+| Insertion | \(Θ(n)\) | \(Θ(n^{2})\) | \(Θ(n^{2})\) | \(O(1)\) |
+| Merge     | \(Θ(n\log n)\) | \(Θ(n\log n)\) | \(Θ(n\log n)\) | \(O(n)\) |
+| Quick     | \(Θ(n\log n)\) | \(Θ(n\log n)\) | \(Θ(n^{2})\) | \(O(\log n)\)\* |
+| Heap      | \(Θ(n\log n)\) | \(Θ(n\log n)\) | \(Θ(n\log n)\) | \(O(1)\) |
 
-Quick sort chooses a pivot element and partitions the permutation into values less than or greater than the pivot.  The expected running time satisfies the recurrence
-\[
- T(n) \approx n + \frac{1}{n}\sum_{k=0}^{n-1} \bigl(T(k) + T(n-1-k)\bigr) 
-\]
-and is $\mathcal{O}(n\log n)$ on average.  The sort is in-place, so the extra space is $\mathcal{O}(\log n)$ for the recursion stack.
+\*Recursion stack; worst-case pivoting uses \(O(n)\).
 
-### Heap Sort
+### 4.2 Placeholders for empirical results
 
-Heap sort first converts the permutation into a binary heap and repeatedly extracts the maximum element.  Both heap construction and extraction phases take $\mathcal{O}(n\log n)$ time, and the algorithm runs in-place.
+(Time in **ms**, memory in **kB**.)
 
-### Steinhaus--Johnson--Trotter Algorithm
+| Algorithm | Runtime (ms) | Memory (kB) | Notes |
+|-----------|--------------|-------------|-------|
+| Bubble    | — | — | |
+| Insertion | — | — | |
+| Merge     | — | — | |
+| Quick     | — | — | |
+| Heap      | — | — | |
 
-This algorithm generates all $n!$ permutations by repeatedly swapping adjacent elements according to their directions.  Each swap changes the parity of the number of inversions, systematically visiting every permutation exactly once.  The generation cost is $\mathcal{O}(n!\,n)$ in total, or $\mathcal{O}(n)$ per permutation.
-## Corner Cases
+*SJT is excluded because it is a generator, not a sorter.*
 
-Some algorithms behave poorly on specific inputs. Using the last element as the pivot in quick sort causes worst-case recursion when the permutation is already sorted. If the length exceeds Python's recursion limit (roughly 1000), the implementation raises a `RecursionError`. The Steinhaus--Johnson--Trotter generator simply yields a single empty permutation when called with $n=0$.
+---
 
+## 5 Corner cases & caveats
 
-## Empirical Testing
+* **Quick sort:** using the last element as pivot on an already-sorted
+  permutation triggers the \(\Theta(n^{2})\) path and can exceed
+  Python’s default recursion limit (≈ 1000).  
+* **SJT:** for \(n=0\) the generator emits a single empty permutation,
+  which is correct.
 
-The script's `test_sorting_algorithm` function measures the time to sort a random permutation.  Because all inputs are permutations, we can assume there are no repeated values, simplifying comparisons.
+---
 
-## Conclusions
-
-By examining permutations, we see that algorithms like merge sort, quick sort, and heap sort run in $\mathcal{O}(n\log n)$ time, while bubble sort and insertion sort are $\mathcal{O}(n^2)$.  The Steinhaus--Johnson--Trotter method provides an efficient means to enumerate all permutations.  Understanding these complexities helps in choosing the appropriate algorithm depending on the permutation size and required performance.
-
-## Algorithm Complexity and Timing Comparison
-
-The following table summarizes the theoretical and empirical performance of each algorithm:
-
-| Algorithm | Expected Time Complexity | Expected Space Complexity | Average Measured Time (n=1000) | Scenarios for Best Performance |
-|-----------|--------------------------|---------------------------|--------------------------------|--------------------------------|
-| Bubble Sort | $\mathcal{O}(n^2)$ | $\mathcal{O}(1)$ | Slow (~1s) | Small data sets, nearly sorted data |
-| Insertion Sort | $\mathcal{O}(n^2)$ | $\mathcal{O}(1)$ | Slow (~0.8s) | Small data sets, nearly sorted data |
-| Merge Sort | $\mathcal{O}(n\log n)$ | $\mathcal{O}(n)$ | Fast (~0.01s) | General purpose, stable sort needed |
-| Quick Sort | $\mathcal{O}(n\log n)$ average<br>$\mathcal{O}(n^2)$ worst | $\mathcal{O}(\log n)$ | Fast (~0.008s) | General purpose, in-place sorting |
-| Heap Sort | $\mathcal{O}(n\log n)$ | $\mathcal{O}(1)$ | Fast (~0.015s) | Memory constrained environments |
-| Steinhaus-Johnson-Trotter | $\mathcal{O}(n)$ per permutation | $\mathcal{O}(n)$ | N/A (generates permutations) | Permutation enumeration |
-#%% md
-# Extended Performance Analysis
+## 6 Measurement methodology
 
 The following cells conduct a more detailed performance analysis. We will:
 1. Run each sorting algorithm on 1000 different random permutations to estimate its average-case time complexity.
